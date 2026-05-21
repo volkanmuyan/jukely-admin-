@@ -1,21 +1,25 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useAuth } from '../context/AuthContext'
 import Toast  from '../components/Toast'
 import api    from '../api/client'
+import { MOCK_TABLES } from '../data/mockData'
 
-const BASE_URL = import.meta.env.VITE_APP_URL || 'https://volkanmuyan.github.io/jukely'
+const BASE_URL = 'https://volkanmuyan.github.io/jukely'
 
 export default function TablesPage() {
-  const [tables,  setTables]  = useState([])
-  const [label,   setLabel]   = useState('')
-  const [loading, setLoading] = useState(false)
-  const [toast,   setToast]   = useState(null)
-  const toastRef              = { current: 0 }
+  const { isDemo }                    = useAuth()
+  const [tables,  setTables]          = useState([])
+  const [label,   setLabel]           = useState('')
+  const [loading, setLoading]         = useState(false)
+  const [toast,   setToast]           = useState(null)
+  const toastId                       = { current: 0 }
 
-  const showToast = (msg, type = 'success') => setToast({ id: ++toastRef.current, msg, type })
+  const showToast = (msg, type = 'success') => setToast({ id: ++toastId.current, msg, type })
 
   const loadTables = useCallback(() => {
-    api.get('/admin/tables').then(r => setTables(r.data.tables)).catch(() => {})
-  }, [])
+    if (isDemo) { setTables(MOCK_TABLES); return }
+    api.get('/admin/tables').then(r => setTables(r.data.tables)).catch(() => setTables([]))
+  }, [isDemo])
 
   useEffect(() => { loadTables() }, [loadTables])
 
@@ -24,10 +28,20 @@ export default function TablesPage() {
     if (!label.trim()) return
     setLoading(true)
     try {
-      await api.post('/admin/tables', { label: label.trim() })
-      setLabel('')
-      loadTables()
+      if (isDemo) {
+        const newTable = {
+          id: `t_${Date.now()}`, company_id: 'demo-company-uuid',
+          label: label.trim(),
+          qr_token: `tok_${label.toLowerCase().replace(/\s+/g,'_')}_demo_${Math.random().toString(36).slice(2,8)}`,
+          is_active: true, scans: 0,
+        }
+        setTables(prev => [...prev, newTable])
+      } else {
+        await api.post('/admin/tables', { label: label.trim() })
+        loadTables()
+      }
       showToast(`"${label}" masası oluşturuldu`)
+      setLabel('')
     } catch (err) {
       showToast(err.response?.data?.error || 'Hata', 'error')
     } finally {
@@ -45,7 +59,6 @@ export default function TablesPage() {
       </div>
 
       <div className="page-content">
-        {/* Create table form */}
         <div className="card card--glow" style={{ marginBottom: 28 }}>
           <div className="section-title" style={{ marginBottom: 16 }}>Yeni Masa Ekle</div>
           <form onSubmit={createTable} style={{ display: 'flex', gap: 10 }}>
@@ -62,7 +75,6 @@ export default function TablesPage() {
           </form>
         </div>
 
-        {/* QR grid */}
         {tables.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state__icon">⬡</div>
@@ -73,9 +85,7 @@ export default function TablesPage() {
           <>
             <div className="section-header">
               <div className="section-title">QR Kodlar</div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>
-                Baskı için sağ tık → Resmi kaydet
-              </span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>Baskı için sağ tık → Resmi kaydet</span>
             </div>
             <div className="qr-grid">
               {tables.map((table, i) => (
@@ -94,20 +104,17 @@ export default function TablesPage() {
 }
 
 function QRCard({ table, baseUrl, delay }) {
-  const url = `${baseUrl}/v/${table.company_id?.slice(0, 8)}?t=${table.qr_token}`
-  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=10&data=${encodeURIComponent(url)}`
+  const url    = `${baseUrl}/#/v/barca-cafe?t=${table.qr_token}`
+  const qrSrc  = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=10&data=${encodeURIComponent(url)}`
 
   return (
     <div className="qr-card" style={{ animationDelay: `${delay}ms` }}>
       <img className="qr-card__img" src={qrSrc} alt={`QR - ${table.label}`} loading="lazy" />
       <div className="qr-card__label">{table.label}</div>
-      <div className="qr-card__token">{table.qr_token.slice(0, 16)}…</div>
-      <a
-        href={qrSrc}
-        download={`jukely-qr-${table.label}.png`}
+      <div className="qr-card__token">{table.qr_token.slice(0, 20)}…</div>
+      <a href={qrSrc} download={`jukely-qr-${table.label}.png`}
         className="btn btn-outline"
-        style={{ fontSize: '0.75rem', padding: '6px 14px', width: '100%', justifyContent: 'center' }}
-      >
+        style={{ fontSize: '0.75rem', padding: '6px 14px', width: '100%', justifyContent: 'center' }}>
         ↓ İndir
       </a>
     </div>

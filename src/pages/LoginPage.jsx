@@ -49,11 +49,16 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div style={{ textAlign: 'center', marginTop: 24, fontSize: '0.75rem', color: 'var(--text-3)' }}>
-          Hesabın yok mu?{' '}
-          <a href="#" style={{ color: 'var(--green)' }} onClick={e => { e.preventDefault(); navigate('/register') }}>
-            Ücretsiz başla
-          </a>
+        <div style={{
+          marginTop: 24, padding: '12px 16px',
+          background: 'var(--green-10)', border: '1px solid var(--border-g)',
+          borderRadius: 'var(--r-md)', fontSize: '0.76rem', color: 'var(--text-2)',
+          textAlign: 'center', lineHeight: 1.6,
+        }}>
+          <strong style={{ color: 'var(--green)' }}>Demo Modu</strong><br />
+          Kullanıcı adı: <code style={{ color: 'var(--green)' }}>admin</code>
+          &nbsp;·&nbsp;
+          Şifre: <code style={{ color: 'var(--green)' }}>admin</code>
         </div>
       </div>
     </div>
