@@ -33,8 +33,8 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">E-posta</label>
-            <input className="form-input" type="email" value={email}
-              onChange={e => setEmail(e.target.value)} placeholder="admin@barcacafe.com" required />
+            <input className="form-input" type="text" value={email}
+              onChange={e => setEmail(e.target.value)} placeholder="admin" required />
           </div>
           <div className="form-group">
             <label className="form-label">Şifre</label>
